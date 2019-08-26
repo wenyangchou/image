@@ -1,0 +1,4 @@
+# image
+基于java的Dhash 图相似度与去重
+使用editDistance或hammingDistance计算相似值
+scala 重构批量计算hash值
