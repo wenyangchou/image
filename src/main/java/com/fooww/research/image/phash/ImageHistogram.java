@@ -1,4 +1,4 @@
-package com.fooww.research.image;
+package com.fooww.research.image.phash;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -11,21 +11,17 @@ import java.net.URL;
  */
 public class ImageHistogram {
 
-	private int redBins;
-	private int greenBins;
-	private int blueBins;
+	private final static int RED_BINS = 4;
+	private final static int GREEN_BINS = 4;
+	private final static int BLUE_BINS = 4;
 
-	public ImageHistogram() {
-		redBins = greenBins = blueBins = 4;
-	}
-
-	private float[] filter(BufferedImage src) {
+	private static float[] filter(BufferedImage src) {
 		int width = src.getWidth();
 		int height = src.getHeight();
 
 		int[] inPixels = new int[width * height];
-		float[] histogramData = new float[redBins * greenBins * blueBins];
-		getRGB(src, 0, 0, width, height, inPixels);
+		float[] histogramData = new float[RED_BINS * GREEN_BINS * BLUE_BINS];
+		getRGB(src, width, height, inPixels);
 		int index = 0;
 		int redIdx = 0, greenIdx = 0, blueIdx = 0;
 		int singleIndex = 0;
@@ -37,10 +33,10 @@ public class ImageHistogram {
 				tr = (inPixels[index] >> 16) & 0xff;
 				tg = (inPixels[index] >> 8) & 0xff;
 				tb = inPixels[index] & 0xff;
-				redIdx = (int) getBinIndex(redBins, tr, 255);
-				greenIdx = (int) getBinIndex(greenBins, tg, 255);
-				blueIdx = (int) getBinIndex(blueBins, tb, 255);
-				singleIndex = redIdx + greenIdx * redBins + blueIdx * redBins * greenBins;
+				redIdx = (int) getBinIndex(RED_BINS, tr);
+				greenIdx = (int) getBinIndex(GREEN_BINS, tg);
+				blueIdx = (int) getBinIndex(BLUE_BINS, tb);
+				singleIndex = redIdx + greenIdx * RED_BINS + blueIdx * RED_BINS * GREEN_BINS;
 				histogramData[singleIndex] += 1;
 				total += 1;
 			}
@@ -54,18 +50,20 @@ public class ImageHistogram {
 		return histogramData;
 	}
 
-	private float getBinIndex(int binCount, int color, int colorMaxValue) {
-		float binIndex = (((float) color) / ((float) colorMaxValue)) * ((float) binCount);
+	private static float getBinIndex(int binCount, int color) {
+		float binIndex = (((float) color) / ((float) 255)) * ((float) binCount);
 		if (binIndex >= binCount)
 			binIndex = binCount - 1;
 		return binIndex;
 	}
 
-	private int[] getRGB(BufferedImage image, int x, int y, int width, int height, int[] pixels) {
+	private static void getRGB(BufferedImage image, int width, int height, int[] pixels) {
 		int type = image.getType();
-		if (type == BufferedImage.TYPE_INT_ARGB || type == BufferedImage.TYPE_INT_RGB)
-			return (int[]) image.getRaster().getDataElements(x, y, width, height, pixels);
-		return image.getRGB(x, y, width, height, pixels, 0, width);
+		if (type == BufferedImage.TYPE_INT_ARGB || type == BufferedImage.TYPE_INT_RGB) {
+			image.getRaster().getDataElements(0, 0, width, height, pixels);
+			return;
+		}
+		image.getRGB(0, 0, width, height, pixels, 0, width);
 	}
 	
 	/**
@@ -75,23 +73,23 @@ public class ImageHistogram {
 	 * @return	返回值大于等于0.8可以简单判断这两张图片内容一致
 	 * @throws IOException
 	 */
-	public double match(File srcFile, File canFile) throws IOException {
-		float[] sourceData = this.filter(ImageIO.read(srcFile));
-		float[] candidateData = this.filter(ImageIO.read(canFile));
+	public static double match(File srcFile, File canFile) throws IOException {
+		float[] sourceData = filter(ImageIO.read(srcFile));
+		float[] candidateData = filter(ImageIO.read(canFile));
 		return calcSimilarity(sourceData, candidateData);
 	}
-	
+
 	/**
 	 * @return	返回值大于等于0.8可以简单判断这两张图片内容一致
 	 * @throws IOException
 	 */
-	public double match(URL srcUrl, URL canUrl) throws IOException {
-		float[] sourceData = this.filter(ImageIO.read(srcUrl));
-		float[] candidateData = this.filter(ImageIO.read(canUrl));
+	public static double match(URL srcUrl, URL canUrl) throws IOException {
+		float[] sourceData = filter(ImageIO.read(srcUrl));
+		float[] candidateData = filter(ImageIO.read(canUrl));
 		return calcSimilarity(sourceData, candidateData);
 	}
 
-	private double calcSimilarity(float[] sourceData, float[] candidateData) {
+	private static double calcSimilarity(float[] sourceData, float[] candidateData) {
 		double[] mixedData = new double[sourceData.length];
 		for (int i = 0; i < sourceData.length; i++) {
 			mixedData[i] = Math.sqrt(sourceData[i] * candidateData[i]);
