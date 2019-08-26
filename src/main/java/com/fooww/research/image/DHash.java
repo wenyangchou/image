@@ -1,6 +1,9 @@
 package com.fooww.research.image;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * @author ：zwy
@@ -32,6 +35,21 @@ public class DHash {
     BufferedImage targetBi = ImageUtil.resize(bufferedImage, 9, 8);
     int[][] grayScalePixel = GrayScale.getRedGrayScale(targetBi);
     return DHash.getPixelDHashCode(grayScalePixel);
+  }
+
+  public static String getImageDHash(String fileURI){
+    File file = new File(fileURI);
+    if (file.exists()){
+      BufferedImage bufferedImage = null;
+      try {
+         bufferedImage = ImageIO.read(file);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      return getImageDHash(bufferedImage);
+    }else{
+      return "";
+    }
   }
 
   private static char intArrayToChar(int[] ints) {

@@ -1,8 +1,5 @@
 package com.fooww.research;
 
-import com.fooww.research.image.DHash;
-import com.fooww.research.image.GrayScale;
-import com.fooww.research.image.ImageUtil;
 import com.fooww.research.image.Similarity;
 
 import javax.imageio.ImageIO;
